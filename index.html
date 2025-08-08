@@ -1,21 +1,33 @@
-<!-- Add this inside the <body> of your index.html -->
-<section style="text-align: center; margin-top: 50px;">
-  <a href="/financial-survey.html" style="
-    display: inline-block;
-    padding: 12px 24px;
-    background-color: #002147; /* deep navy */
-    color: #fff;
-    font-family: 'Georgia', serif;
-    font-size: 18px;
-    text-decoration: none;
-    border: 2px solid #d4af37; /* gold border */
-    border-radius: 8px;
-    transition: background-color 0.3s ease;
-  "
-  onmouseover="this.style.backgroundColor='#001633';"
-  onmouseout="this.style.backgroundColor='#002147';"
-  >
-    Take the Financial Survey
-  </a>
-</section>
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ellienomics</title>
+  <style>
+    body { font-family: 'Merriweather', serif; background: #f8f5f0; color: #17253a; text-align: center; padding: 50px; }
+    h1 { color: #0b2349; }
+    a.button {
+      display: inline-block;
+      background: #0b2349;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: background 0.3s ease;
+    }
+    a.button:hover {
+      background: #cfa34d;
+      color: #0b2349;
+    }
+  </style>
+</head>
+<body>
+  <h1>Welcome to Ellienomics</h1>
+  <p>Helping you prioritize your financial next steps.</p>
+  <a href="/financial-survey/" class="button">Take the Financial Survey</a>
+</body>
+</html>
+```
