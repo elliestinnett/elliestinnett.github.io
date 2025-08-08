@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Financial Priorities Survey</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --navy:#0b2349; /* deep New England navy */
+      --cream:#f8f5f0; /* parchment */
+      --gold:#cfa34d; /* brass/gold accent */
+      --ink:#17253a;  /* body text */
+    }
+    *{box-sizing:border-box}
+    body{
+      font-family:'Merriweather', serif;
+      background:var(--cream);
+      color:var(--ink);
+      margin:0; padding:0;
+      line-height:1.6; letter-spacing:.01em;
+    }
+    .wrap{max-width:840px;margin:48px auto;padding:0 20px}
+    header{ text-align:center; margin-bottom:28px }
+    header h1{
+      margin:0 0 8px; font-weight:700; font-size:2.2rem; color:var(--navy);
+      text-transform:uppercase; letter-spacing:.08em;
+    }
+    header .rule{ width:180px; height:2px; background:var(--gold); margin:10px auto 0 }
+
+    .card{ background:#fff; border:2px solid var(--navy); border-radius:12px; box-shadow:3px 4px 10px rgb(11 35 73 / .08); }
+    .step{ display:none; padding:28px 28px 16px }
+    .step.active{ display:block }
+
+    .q-title{ font-weight:700; font-size:1.2rem; color:var(--navy); margin:0 0 12px }
+    .help{ font-size:.95rem; background:#fcf8e8; border-left:4px solid var(--gold); padding:10px 12px; border-radius:6px; color:#4b5563; margin:8px 0 0 }
+
+    label.opt{ display:flex; align-items:center; gap:10px; padding:8px 10px; border:1.5px solid #e6dfcd; border-radius:8px; margin:.45rem 0; cursor:pointer }
+    input[type="radio"], input[type="checkbox"]{ accent-color:var(--navy) }
+
+    input[type="text"], input[type="number"], select, textarea{
+      width:100%; max-width:460px; padding:10px 12px; font-size:1rem;
+      border:2px solid var(--gold); border-radius:8px; background:#fcf8e8; color:var(--ink);
+    }
+    input:focus, select:focus, textarea:focus{ outline:none; border-color:var(--navy); background:#fff }
+
+    .debt-entry{ position:relative; border:1.5px solid var(--gold); background:#fcf8e8; border-radius:10px; padding:14px; margin:10px 0; box-shadow:1px 2px 6px rgb(207 163 77 / .25) }
+    .debt-row{ display:grid; grid-template-columns: 1fr 160px; gap:12px; align-items:center }
+    .remove-debt{ position:absolute; top:8px; right:8px; background:#a43d3d; color:#fff; border:none; border-radius:6px; padding:4px 8px; cursor:pointer }
+    .remove-debt:hover{ background:#7c1f1f }
+
+    .nav{ display:flex; justify-content:space-between; padding:14px 20px 20px; gap:12px; flex-wrap:wrap }
+    button{
+      font-family:'Merriweather',serif; font-weight:700; font-size:1rem; cursor:pointer;
+      border:2px solid var(--gold); border-radius:10px; padding:10px 16px;
+      background:var(--navy); color:#fff; box-shadow:1px 2px 5px rgb(207 163 77 / .35);
+      transition:.2s ease-in-out
+    }
+    button:hover:not(:disabled){ background:var(--gold); color:var(--navy) }
+    button:disabled{ opacity:.5; cursor:not-allowed }
+
+    .result{ margin-top:18px; padding:22px; border:2px solid var(--navy); border-radius:12px; background:#ffffffee; box-shadow:3px 4px 10px rgb(11 35 73 / .08) }
+    .result h3{ margin:0 0 10px; color:var(--navy); text-transform:uppercase; letter-spacing:.06em }
+    .result ol{ padding-left:18px }
+    .muted{ color:#6b7280 }
+
+    @media (max-width:520px){
+      .debt-row{ grid-template-columns: 1fr }
+      .nav{ justify-content:center }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Financial Priorities Survey</h1>
+      <div class="rule"></div>
+    </header>
+
+    <div id="steps" class="card">
+      <!-- Steps are injected by JS -->
+    </div>
+
+    <div id="recommendations" class="result" style="display:none"></div>
+  </div>
+
+<script>
+// ------------------------------
+// State
+// ------------------------------
+const state = {
+  // Debt
+  hasDebt: null,
+  debts: [], // {name, rate}
+  makingMinPayments: null,
+
+  // Employer plan + match
+  hasEmployerPlan: null,
+  hasMatch: null,
+  matchPercent: null, // number like 3 for 3%
+
+  // HDHP / HSA
+  hasHDHP: null,
+  hasHSA: null,
+  hsaCoverage: null, // self | family
+  hsaMaxed: null,
+
+  // FSA
+  fsaEligible: null,
+  fsaExpectedSpend: null, // number
+  fsaContribEnough: null,
+
+  // Traditional IRA if no employer plan path
+  iraEligible: null,
+  iraMaxed: null,
+
+  // Education expenses
+  hasEduExpenses: null,
+  eduTiming: null, // within_1y | 1_3y | 3_5y | gt_5y | unsure
+  eduAmount: null, // number
+  contributed529: null,
+
+  // Emergency fund & big goals
+  emergencyMonths: null, // <1 | 1_3 | 3_6 | gt_6
+  bigNearTermExpense: null, // yes/no
+
+  // Savings goals (kept minimal)
+  hasSavingsGoal: null,
+  savingsGoals: [],
+  savingsGoalOther: "",
+};
+
+// Utility formatters
+const num = (v)=> (v===null||v===undefined||v==="")?null:Number(v);
+const pct = (v)=> v!==null && v!=="" ? Number(v) : null;
+const highestDebtRate = ()=> state.debts.length? Math.max(...state.debts.map(d=>Number(d.rate)||0)) : null;
+
+// ------------------------------
+// Steps Definition (one at a time UI)
+// ------------------------------
+const steps = [
+  // 0 Debt yes/no
+  {
+    id:'hasDebt',
+    render(){
+      return `
+        <div class="step active">
+          <div class="q-title">Do you have any debt?</div>
+          <label class="opt"><input type="radio" name="hasDebt" value="yes"> Yes</label>
+          <label class="opt"><input type="radio" name="hasDebt" value="no"> No</label>
+        </div>`
+    },
+    bind(root, advance){
+      root.querySelectorAll('input[name="hasDebt"]').forEach(r=>{
+        r.addEventListener('change', e=>{ state.hasDebt = e.target.value; advance(); });
+      });
+    }
+  },
+  // 1 Debt list if yes
+  {
+    id:'debts', show:()=> state.hasDebt==='yes',
+    render(){
+      const entries = state.debts.map((d,i)=> debtEntryTemplate(d.name,d.rate,i)).join('');
+      return `
+        <div class="step active">
+          <div class="q-title">List your debts and interest rates</div>
+          <div class="help">Add each debt with a name (e.g., Credit Card) and the annual interest rate (%)</div>
+          <div id="debtList">${entries || ''}</div>
+          <button type="button" id="addDebt">Add Debt</button>
+        </div>`
+    },
+    bind(root, advance){
+      const list = root.querySelector('#debtList');
+      root.querySelector('#addDebt').addEventListener('click', ()=>{
+        state.debts.push({name:'', rate:''});
+        render();
+      });
+
+      // bind existing entries
+      list.querySelectorAll('[data-idx]').forEach(row=>{
+        const i = Number(row.dataset.idx);
+        row.querySelector('.dname').addEventListener('input', e=>{ state.debts[i].name = e.target.value; });
+        row.querySelector('.drate').addEventListener('input', e=>{ state.debts[i].rate = e.target.value; });
+        row.querySelector('.remove-debt').addEventListener('click', ()=>{ state.debts.splice(i,1); render(); });
+      });
+
+      // Auto-advance if the user has at least one entry or chooses to skip
+      const nextBtn = addNav(root, {back:true, next:true});
+      nextBtn.addEventListener('click', advance);
+    }
+  },
+  // 2 Minimum payments if debt yes
+  {
+    id:'minPayments', show:()=> state.hasDebt==='yes',
+    render(){
+      return `
+        <div class="step active">
+          <div class="q-title">Are you making the minimum payments on your debt?</div>
+          <label class="opt"><input type="radio" name="minPay" value="yes"> Yes</label>
+          <label class="opt"><input type="radio" name="minPay" value="no"> No</label>
+        </div>`
+    },
+    bind(root, advance){
+      root.querySelectorAll('input[name="minPay"]').forEach(r=>{
+        r.addEventListener('change', e=>{ state.makingMinPayments = e.target.value; advance(); });
+      });
+    }
+  },
+  // 3 Employer plan & match basics
+  {
+    id:'employerPlan',
+    render(){
+      return `
+        <div class="step active">
+          <div class="q-title">Do you have an employer-sponsored retirement plan?</div>
+          <label class="opt"><input type="radio" name="hasPlan" value="yes"> Yes</label>
+          <label class="opt"><input type="radio" name="hasPlan" value="no"> No</label>
+          <div class="help">Examples include 401(k), 403(b), Thrift Savings Plan, 457(b), SIMPLE/SEP IRA.</div>
+        </div>`
+    },
+    bind(root, advance){
+      root.querySelectorAll('input[name="hasPlan"]').forEach(r=>{
+        r.addEventListener('change', e=>{ state.hasEmployerPlan = e.target.value; advance(); });
+      });
+    }
+  },
+  {
+    id:'match', show:()=> state.hasEmployerPlan==='yes',
+    render(){
+      return `
+        <div class="step active">
+          <div class="q-title">Does your employer match contributions?</div>
+          <label class="opt"><input type="radio" name="hasMatch" value="yes"> Yes</label>
+          <label class="opt"><input type="radio" name="hasMatch" value="no"> No</label>
+          <div class="help">Employer matching is extra money your employer contributes based on your contributions, usually up to a percent of salary.</div>
+        </div>`
+    },
+    bind(root, advance){
+      root.querySelectorAll('input[name="hasMatch"]').forEach(r=>{
+        r.addEventListener('change', e=>{ state.hasMatch = e.target.value; advance(); });
+      });
+    }
+  },
+  {
+    id:'matchPercent', show:()=> state.hasEmployerPlan==='yes' && state.hasMatch==='yes',
+    render(){
+      return `
+        <div class="step active">
+          <div class="q-title">What is your employer match percentage?</div>
+          <div class="help">Enter just the percent number. For example, enter <strong>3</strong> for a 3% match.</div>
+          <input type="number" id="matchPct" min="0" step="0.1" placeholder="e.g., 3" />
+        </div>`
+    },
+    bind(root, advance){
+      const inp = root.querySelector('#matchPct');
+      const nextBtn = addNav(root,{back:true, next:true});
+      const onDone=()=>{ state.matchPercent = pct(inp.value); advance(); };
+      inp.addEventListener('keyup', e=>{ if(e.key==='Enter') onDone(); });
+      nextBtn.addEventListener('click', onDone);
+    }
+  },
+  // 6 HDHP
+  {
+    id:'hdhp',
+    render(){
+      return `
+        <div class="step active">
+          <div class="q-title">Do you have a High Deductible Health Plan (HDHP)?</div>
+          <label class="opt"><input type="radio" name="hdhp" value="yes"> Yes</label>
+          <label class="opt"><input type="radio" name="hdhp" value="no"> No</label>
+        </div>`
+    },
+    bind(root, advance){
+      root.querySelectorAll('input[name="hdhp"]').forEach(r=>{
+        r.addEventListener('change', e=>{ state.hasHDHP = e.target.value; advance(); });
+      });
+    }
+  },
+  // 7 HSA follow-ups if HDHP
+  {
+    id:'hsaOwn', show:()=> state.hasHDHP==='yes',
+    render(){
+      return `
+        <div class="step active">
+          <div class="q-title">Do you have an HSA (Health Savings Account)?</div>
+          <label class="opt"><input type="radio" name="hsa" value="yes"> Yes</label>
+          <label class="opt"><input type="radio" name="hsa" value="no"> No</label>
+        </div>`
+    },
+    bind(root, advance){
+      root.querySelectorAll('input[name="hsa"]').forEach(r=>{
+        r.addEventListener('change', e=>{ state.hasHSA = e.target.value; advance(); });
+      });
+    }
+  },
+  {
+    id:'hsaCoverage', show:()=> state.hasHDHP==='yes' && state.hasHSA==='yes',
+    render(){
+      return `
+        <div class="step active">
+          <div class="q-title">What type of HSA coverage do you have?</div>
+          <select id="hsaCvg">
+            <option value="" disabled selected>Select one</option>
+            <option value="self">Self-only</option>
+            <option value="family">Family</option>
+          </select>
+          <div class="help">Maxing your HSA offers triple tax advantages and avoids FICA on payroll contributions.</div>
+        </div>`
+    },
+    bind(root, advance){
+      const sel = root.querySelector('#hsaCvg');
+      const nextBtn = addNav(root,{back:true, next:true});
+      const onDone=()=>{ state.hsaCoverage = sel.value || null; advance(); };
+      nextBtn.addEventListener('click', onDone);
+      sel.addEventListener('change', onDone);
+    }
+  },
+  {
+    id:'hsaMax', show:()=> state.hasHDHP==='yes' && state.hasHSA==='yes',
+    render(){
+      return `
+        <div class="step active">
+          <div class="q-title">Have you contributed the maximum to your HSA this year?</div>
+          <label class="opt"><input type="radio" name="hsaMax" value="yes"> Yes</label>
+          <label class="opt"><input type="radio" name="hsaMax" value="no"> No</label>
+        </div>`
+    },
+    bind(root, advance){
+      root.querySelectorAll('input[name="hsaMax"]').forEach(r=>{
+        r.addEventListener('change', e=>{ state.hsaMaxed = e.target.value; advance(); });
+      });
+    }
+  },
+  // 10 FSA
+  {
+    id:'fsaEligible',
+    render(){
+      return `
+        <div class="step active">
+          <div class="q-title">Are you eligible for a Flexible Spending Account (FSA)?</div>
+          <label class="opt"><input type="radio" name="fsaEl" value="yes"> Yes</label>
+          <label class="opt"><input type="radio" name="fsaEl" value="no"> No</label>
+          <div class="help">Contribute up to your expected eligible expenses; unused funds usually don't carry over much.</div>
+        </div>`
+    },
+    bind(root, advance){
+      root.querySelectorAll('input[name="fsaEl"]').forEach(r=>{
+        r.addEventListener('change', e=>{ state.fsaEligible = e.target.value; advance(); });
+      });
+    }
+  },
+  {
+    id:'fsaExpected', show:()=> state.fsaEligible==='yes',
+    render(){
+      return `
+        <div class="step active">
+          <div class="q-title">About how much do you expect to spend on FSA-eligible expenses this year? (USD)</div>
+          <input type="number" id="fsaAmt" min="0" step="50" placeholder="e.g., 1200" />
+        </div>`
+    },
+    bind(root, advance){
+      const inp = root.querySelector('#fsaAmt');
+      const nextBtn = addNav(root,{back:true, next:true});
+      const onDone=()=>{ state.fsaExpectedSpend = num(inp.value); advance(); };
+      inp.addEventListener('keyup', e=>{ if(e.key==='Enter') onDone(); });
+      nextBtn.addEventListener('click', onDone);
+    }
+  },
+  {
+    id:'fsaEnough', show:()=> state.fsaEligible==='yes' && state.fsaExpectedSpend!==null,
+    render(){
+      return `
+        <div class="step active">
+          <div class="q-title">Are you contributing at least that amount to your FSA?</div>
+          <label class="opt"><input type="radio" name="fsaEnough" value="yes"> Yes</label>
+          <label class="opt"><input type="radio" name="fsaEnough" value="no"> No</label>
+        </div>`
+    },
+    bind(root, advance){
+      root.querySelectorAll('input[name="fsaEnough"]').forEach(r=>{
+        r.addEventListener('change', e=>{ state.fsaContribEnough = e.target.value; advance(); });
+      });
+    }
+  },
+  // 13 Compare rates vs match
+  {
+    id:'compareDebtVsMatch', show:()=> state.hasEmployerPlan==='yes' && state.hasMatch==='yes',
+    render(){
+      const hi = highestDebtRate();
+      const hint = hi!==null && state.matchPercent!==null ? `<div class="help">Highest debt APR you entered: <strong>${hi}%</strong>. Employer match: <strong>${state.matchPercent}%</strong>.</div>` : '';
+      return `
+        <div class="step active">
+          <div class="q-title">We'll compare your highest debt rate to your employer match</div>
+          ${hint}
+          <div class="help">We'll use this to decide whether to pay debt first or get the full match first.</div>
+          <div style="height:8px"></div>
+          <button id="proceed" type="button">OK</button>
+        </div>`
+    },
+    bind(root, advance){
+      root.querySelector('#proceed').addEventListener('click', advance);
+    }
+  },
+  // 14 Education expenses questions
+  {
+    id:'eduNeed',
+    render(){
+      return `
+        <div class="step active">
+          <div class="q-title">Do you currently have, or expect to have, education expenses for yourself, your dependents, or a loved one?</div>
+          <label class="opt"><input type="radio" name="edu" value="yes"> Yes</label>
+          <label class="opt"><input type="radio" name="edu" value="no"> No</label>
+        </div>`
+    },
+    bind(root, advance){
+      root.querySelectorAll('input[name="edu"]').forEach(r=>{
+        r.addEventListener('change', e=>{ state.hasEduExpenses = e.target.value; advance(); });
+      });
+    }
+  },
+  {
+    id:'eduTiming', show:()=> state.hasEduExpenses==='yes',
+    render(){
+      return `
+        <div class="step active">
+          <div class="q-title">When do you expect to begin incurring these education-related expenses?</div>
+          <label class="opt"><input type="radio" name="edutime" value="within_1y"> Within the next 12 months</label>
+          <label class="opt"><input type="radio" name="edutime" value="1_3y"> In 1–3 years</label>
+          <label class="opt"><input type="radio" name="edutime" value="3_5y"> In 3–5 years</label>
+          <label class="opt"><input type="radio" name="edutime" value="gt_5y"> In more than 5 years</label>
+          <label class="opt"><input type="radio" name="edutime" value="unsure"> Not sure yet</label>
+        </div>`
+    },
+    bind(root, advance){
+      root.querySelectorAll('input[name="edutime"]').forEach(r=>{
+        r.addEventListener('change', e=>{ state.eduTiming = e.target.value; advance(); });
+      });
+    }
+  },
+  {
+    id:'eduAmount', show:()=> state.hasEduExpenses==='yes',
+    render(){
+      return `
+        <div class="step active">
+          <div class="q-title">About how much will you need for education expenses? (USD)</div>
+          <input type="number" id="eduAmt" min="0" step="500" placeholder="e.g., 5000" />
+        </div>`
+    },
+    bind(root, advance){
+      const inp = root.querySelector('#eduAmt');
+      const nextBtn = addNav(root,{back:true, next:true});
+      const onDone=()=>{ state.eduAmount = num(inp.value); advance(); };
+      inp.addEventListener('keyup', e=>{ if(e.key==='Enter') onDone(); });
+      nextBtn.addEventListener('click', onDone);
+    }
+  },
+  // 17 Emergency fund
+  {
+    id:'emergency',
+    render(){
+      return `
+        <div class="step active">
+          <div class="q-title">How many months of essential expenses do you have saved as an emergency fund?</div>
+          <label class="opt"><input type="radio" name="ef" value="lt1"> Less than 1 month</label>
+          <label class="opt"><input type="radio" name="ef" value="1_3"> 1–3 months</label>
+          <label class="opt"><input type="radio" name="ef" value="3_6"> 3–6 months</label>
+          <label class="opt"><input type="radio" name="ef" value="gt6"> More than 6 months</label>
+        </div>`
+    },
+    bind(root, advance){
+      root.querySelectorAll('input[name="ef"]').forEach(r=>{
+        r.addEventListener('change', e=>{ state.emergencyMonths = e.target.value; advance(); });
+      });
+    }
+  },
+  // 18 Big near-term expenses
+  {
+    id:'bigNear', show:()=> state.emergencyMonths==='3_6' || state.emergencyMonths==='gt6',
+    render(){
+      return `
+        <div class="step active">
+          <div class="q-title">Are you saving for a big expense within the next few years (home down payment, car, wedding, etc.)?</div>
+          <label class="opt"><input type="radio" name="bigNear" value="yes"> Yes</label>
+          <label class="opt"><input type="radio" name="bigNear" value="no"> No</label>
+        </div>`
+    },
+    bind(root, advance){
+      root.querySelectorAll('input[name="bigNear"]').forEach(r=>{
+        r.addEventListener('change', e=>{ state.bigNearTermExpense = e.target.value; advance(); });
+      });
+    }
+  },
+  // 19 Traditional IRA path (if no employer plan)
+  {
+    id:'iraEligible', show:()=> state.hasEmployerPlan==='no',
+    render(){
+      return `
+        <div class="step active">
+          <div class="q-title">Are you eligible to deduct contributions to a Traditional IRA?</div>
+          <label class="opt"><input type="radio" name="iraE" value="yes"> Yes</label>
+          <label class="opt"><input type="radio" name="iraE" value="no"> No / Not sure</label>
+          <div class="help">Deductibility phases out at certain income levels if you or your spouse are covered by a retirement plan.</div>
+        </div>`
+    },
+    bind(root, advance){
+      root.querySelectorAll('input[name="iraE"]').forEach(r=>{
+        r.addEventListener('change', e=>{ state.iraEligible = e.target.value; advance(); });
+      });
+    }
+  },
+  {
+    id:'iraMaxed', show:()=> state.hasEmployerPlan==='no' && state.iraEligible==='yes',
+    render(){
+      return `
+        <div class="step active">
+          <div class="q-title">Have you maximized your Traditional IRA contributions for the year?</div>
+          <label class="opt"><input type="radio" name="iraM" value="yes"> Yes</label>
+          <label class="opt"><input type="radio" name="iraM" value="no"> No</label>
+        </div>`
+    },
+    bind(root, advance){
+      root.querySelectorAll('input[name="iraM"]').forEach(r=>{
+        r.addEventListener('change', e=>{ state.iraMaxed = e.target.value; advance(); });
+      });
+    }
+  },
+];
+
+// ------------------------------
+// Rendering + Navigation
+// ------------------------------
+let stepIndex = 0;
+const stepsHost = document.getElementById('steps');
+const recHost = document.getElementById('recommendations');
+
+function debtEntryTemplate(name='', rate='', idx=0){
+  return `<div class="debt-entry" data-idx="${idx}">
+    <button type="button" class="remove-debt" title="Remove">×</button>
+    <div class="debt-row">
+      <div>
+        <label class="muted">Debt name</label>
+        <input class="dname" type="text" placeholder="e.g., Credit Card" value="${name?.replaceAll('"','&quot;')||''}">
+      </div>
+      <div>
+        <label class="muted">Interest rate (%)</label>
+        <input class="drate" type="number" min="0" step="0.1" placeholder="e.g., 18" value="${rate||''}">
+      </div>
+    </div>
+  </div>`
+}
+
+function render(){
+  // find the next visible step index if current is hidden
+  while(steps[stepIndex] && steps[stepIndex].show && !steps[stepIndex].show()){ stepIndex++; }
+
+  if(stepIndex>=steps.length){
+    showRecommendations();
+    return;
+  }
+
+  const s = steps[stepIndex];
+  stepsHost.innerHTML = s.render();
+  // add nav buttons except for single-button special screens
+  addNav(stepsHost, {back: stepIndex>0, next:false});
+  s.bind(stepsHost, nextStep);
+}
+
+function addNav(root, {back=false, next=false}={}){
+  const nav = document.createElement('div');
+  nav.className = 'nav';
+  if(back){
+    const b = document.createElement('button');
+    b.type='button'; b.textContent='Back';
+    b.addEventListener('click', prevStep);
+    nav.appendChild(b);
+  }
+  if(next){
+    const n = document.createElement('button');
+    n.type='button'; n.textContent='Next';
+    nav.appendChild(n);
+    root.appendChild(nav);
+    return n;
+  }
+  root.appendChild(nav);
+  return null;
+}
+
+function nextStep(){ stepIndex++; render(); }
+function prevStep(){
+  // move back to a prior visible step
+  do { stepIndex = Math.max(0, stepIndex-1); }
+  while(steps[stepIndex] && steps[stepIndex].show && !steps[stepIndex].show() && stepIndex>0);
+  render();
+}
+
+function showRecommendations(){
+  const rec = [];
+
+  // Step 1 — Minimum debt payments
+  if(state.hasDebt==='yes' && state.makingMinPayments==='no'){
+    rec.push('Make at least the minimum payment on every debt immediately.');
+  }
+
+  // Step 2/3 — HSA then FSA
+  if(state.hasHDHP==='yes' && state.hasHSA==='yes' && state.hsaMaxed==='no'){
+    rec.push('Max your HSA for the year (triple tax-advantaged and payroll contributions avoid FICA).');
+  }
+  if(state.fsaEligible==='yes'){
+    if(state.fsaExpectedSpend!=null && state.fsaExpectedSpend>0 && state.fsaContribEnough==='no'){
+      rec.push(`Contribute about $${Number(state.fsaExpectedSpend).toLocaleString()} to your FSA (up to the plan/IRS limit). Avoid overfunding since carryover is limited.`);
+    }
+  }
+
+  // Step 4A — High-interest debt vs match ordering
+  if(state.hasEmployerPlan==='yes' && state.hasMatch==='yes' && state.matchPercent!=null){
+    const hi = highestDebtRate();
+    if(hi!=null){
+      if(hi > state.matchPercent){
+        rec.push('Pay down debts with APR higher than your employer match percentage. Then contribute enough to get the full employer match.');
+      } else {
+        rec.push('Contribute enough to get your full employer match (free money).');
+      }
+    } else {
+      rec.push('Contribute enough to get your full employer match (free money).');
+    }
+  } else if(state.hasEmployerPlan==='yes' && state.hasMatch==='no'){
+    // Employer plan but no match
+    rec.push('Contribute to your employer plan as budget allows (no match available).');
+  }
+
+  // Step 5 — Traditional IRA if no employer plan
+  if(state.hasEmployerPlan==='no'){
+    if(state.iraEligible==='yes'){
+      if(state.iraMaxed==='no') rec.push('Increase Traditional IRA contributions up to the annual maximum you are eligible to deduct.');
+    } else {
+      rec.push('Consider IRA contributions if eligible; deductibility depends on income and coverage by a workplace plan.');
+    }
+  }
+
+  // Step 6 — Education (first check within 1 year)
+  if(state.hasEduExpenses==='yes' && state.eduTiming==='within_1y'){
+    if(state.eduAmount) rec.push(`If your state offers benefits, contribute to a 529 plan—target up to $${Number(state.eduAmount).toLocaleString()} (or the annual limit, whichever is less).`);
+    else rec.push('If expenses are within a year, consider contributing to a 529 plan up to the annual limit or expected need.');
+  }
+
+  // Step 7 — Emergency Fund gate
+  if(state.emergencyMonths==='lt1'){
+    rec.push('Build an emergency fund up to at least 1 month of expenses before moving on.');
+  } else if(state.emergencyMonths==='1_3'){
+    rec.push('Build your emergency fund to at least 3 months of expenses before moving on.');
+  }
+
+  // Step 8 — Big near-term expenses (after >=3 months EF)
+  if(state.emergencyMonths==='3_6' || state.emergencyMonths==='gt6'){
+    if(state.bigNearTermExpense==='yes'){
+      rec.push('Save for your big near‑term goal before proceeding (keep those funds safe and liquid).');
+    }
+  }
+
+  // Step 9 — Education revisit
+  if(state.hasEduExpenses==='yes' && (state.emergencyMonths==='3_6' || state.emergencyMonths==='gt6')){
+    if(state.eduAmount) rec.push(`Contribute to a 529 plan up to the lesser of the annual limit or $${Number(state.eduAmount).toLocaleString()}.`);
+    else rec.push('Contribute to a 529 plan up to the lesser of the annual limit or your expected need.');
+  }
+
+  // Step 10 — Max employer plan fully
+  if(state.hasEmployerPlan==='yes'){
+    rec.push('After the above, increase contributions to maximize your employer‑sponsored retirement plan for the year.');
+  }
+
+  // Final fallback if nothing accumulated
+  if(rec.length===0){
+    rec.push('Nice work—your inputs don’t trigger any urgent actions. Continue funding long‑term goals and consider increasing retirement contributions.');
+  }
+
+  recHost.style.display='block';
+  recHost.innerHTML = `<h3>Your Next Steps</h3><ol>${rec.map(r=>`<li>${r}</li>`).join('')}</ol>`;
+}
+
+// Boot
+render();
+</script>
+</body>
+</html>
