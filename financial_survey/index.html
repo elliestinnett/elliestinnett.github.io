@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Determine Your Next Financial Step</title>
+  <title>Financial Priorities Survey</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
   <style>
     :root{
-      --navy:#0b2349;
-      --cream:#f8f5f0;
-      --gold:#cfa34d;
-      --ink:#17253a;
+      --navy:#0b2349; /* deep New England navy */
+      --cream:#f8f5f0; /* parchment */
+      --gold:#cfa34d; /* brass/gold accent */
+      --ink:#17253a;  /* body text */
     }
     *{box-sizing:border-box}
     body{
@@ -20,32 +20,22 @@
       background:var(--cream);
       color:var(--ink);
       margin:0; padding:0;
-      line-height:1.6;
-      letter-spacing:.01em;
+      line-height:1.6; letter-spacing:.01em;
     }
     .wrap{max-width:840px;margin:48px auto;padding:0 20px}
     header{ text-align:center; margin-bottom:28px }
     header h1{
-      margin:0 0 8px;
-      font-weight:700;
-      font-size:2.2rem;
-      color:var(--navy);
-      text-transform:uppercase;
-      letter-spacing:.08em;
+      margin:0 0 8px; font-weight:700; font-size:2.2rem; color:var(--navy);
+      text-transform:uppercase; letter-spacing:.08em;
     }
-    header .rule{
-      width:180px; height:2px; background:var(--gold); margin:10px auto 0;
-    }
+    header .rule{ width:180px; height:2px; background:var(--gold); margin:10px auto 0 }
 
     .card{ background:#fff; border:2px solid var(--navy); border-radius:12px; box-shadow:3px 4px 10px rgb(11 35 73 / .08); }
     .step{ display:none; padding:28px 28px 16px }
     .step.active{ display:block }
 
     .q-title{ font-weight:700; font-size:1.2rem; color:var(--navy); margin:0 0 12px }
-    .help{
-      font-size:.95rem; background:#fcf8e8; border-left:4px solid var(--gold);
-      padding:10px 12px; border-radius:6px; color:#4b5563; margin:8px 0 0;
-    }
+    .help{ font-size:.95rem; background:#fcf8e8; border-left:4px solid var(--gold); padding:10px 12px; border-radius:6px; color:#4b5563; margin:8px 0 0 }
 
     label.opt{ display:flex; align-items:center; gap:10px; padding:8px 10px; border:1.5px solid #e6dfcd; border-radius:8px; margin:.45rem 0; cursor:pointer }
     input[type="radio"], input[type="checkbox"]{ accent-color:var(--navy) }
@@ -54,20 +44,11 @@
       width:100%; max-width:460px; padding:10px 12px; font-size:1rem;
       border:2px solid var(--gold); border-radius:8px; background:#fcf8e8; color:var(--ink);
     }
-    input:focus, select:focus, textarea:focus{
-      outline:none; border-color:var(--navy); background:#fff;
-    }
+    input:focus, select:focus, textarea:focus{ outline:none; border-color:var(--navy); background:#fff }
 
-    .debt-entry{ position:relative; border:1.5px solid var(--gold); background:#fcf8e8;
-      border-radius:10px; padding:14px; margin:10px 0;
-      box-shadow:1px 2px 6px rgb(207 163 77 / .25)
-    }
+    .debt-entry{ position:relative; border:1.5px solid var(--gold); background:#fcf8e8; border-radius:10px; padding:14px; margin:10px 0; box-shadow:1px 2px 6px rgb(207 163 77 / .25) }
     .debt-row{ display:grid; grid-template-columns: 1fr 160px; gap:12px; align-items:center }
-    .remove-debt{
-      position:absolute; top:8px; right:8px;
-      background:#a43d3d; color:#fff; border:none; border-radius:6px;
-      padding:4px 8px; cursor:pointer
-    }
+    .remove-debt{ position:absolute; top:8px; right:8px; background:#a43d3d; color:#fff; border:none; border-radius:6px; padding:4px 8px; cursor:pointer }
     .remove-debt:hover{ background:#7c1f1f }
 
     .nav{ display:flex; justify-content:space-between; padding:14px 20px 20px; gap:12px; flex-wrap:wrap }
@@ -77,21 +58,10 @@
       background:var(--navy); color:#fff; box-shadow:1px 2px 5px rgb(207 163 77 / .35);
       transition:.2s ease-in-out
     }
-//    button:hover:not(:disabled){ background:var(--gold); color:var(--navy) }
-//    button:disabled{ opacity:.5; cursor:not-allowed }
+    button:hover:not(:disabled){ background:var(--gold); color:var(--navy) }
+    button:disabled{ opacity:.5; cursor:not-allowed }
 
-//    .home-btn{
-//      font-size:0.9rem; background:var(--gold); color:var(--navy);
-//      border:2px solid var(--navy); border-radius:8px;
-//      padding:6px 12px; font-weight:700; text-decoration:none;
-//    }
-//    .home-btn:hover{ background:var(--navy); color:#fff }
-
-    .result{
-      margin-top:18px; padding:22px; border:2px solid var(--navy);
-      border-radius:12px; background:#ffffffee;
-      box-shadow:3px 4px 10px rgb(11 35 73 / .08)
-    }
+    .result{ margin-top:18px; padding:22px; border:2px solid var(--navy); border-radius:12px; background:#ffffffee; box-shadow:3px 4px 10px rgb(11 35 73 / .08) }
     .result h3{ margin:0 0 10px; color:var(--navy); text-transform:uppercase; letter-spacing:.06em }
     .result ol{ padding-left:18px }
     .muted{ color:#6b7280 }
@@ -109,7 +79,9 @@
       <div class="rule"></div>
     </header>
 
-    <div id="steps" class="card"></div>
+    <div id="steps" class="card">
+      <!-- Steps are injected by JS -->
+    </div>
 
     <div id="recommendations" class="result" style="display:none"></div>
   </div>
@@ -118,20 +90,52 @@
 // ------------------------------
 // State
 // ------------------------------
-const state = { /* ... unchanged state variables ... */ };
+const state = {
+  // Debt
+  hasDebt: null,
+  debts: [], // {name, rate}
+  makingMinPayments: null,
 
-// Utility functions from your original code
-const num = v => (v===null||v===""?null:Number(v));
-const pct = v => v!==null && v!=="" ? Number(v) : null;
-const highestDebtRate = ()=> state.debts?.length? Math.max(...state.debts.map(d=>Number(d.rate)||0)) : null;
+  // Employer plan + match
+  hasEmployerPlan: null,
+  hasMatch: null,
+  matchPercent: null, // number like 3 for 3%
 
-// ------------------------------
-// Steps Definition
-// ------------------------------
-// (Keep your full steps array here exactly as before)
-// Only change: navigation now includes Home button
-// ------------------------------
+  // HDHP / HSA
+  hasHDHP: null,
+  hasHSA: null,
+  hsaCoverage: null, // self | family
+  hsaMaxed: null,
 
+  // FSA
+  fsaEligible: null,
+  fsaExpectedSpend: null, // number
+  fsaContribEnough: null,
+
+  // Traditional IRA if no employer plan path
+  iraEligible: null,
+  iraMaxed: null,
+
+  // Education expenses
+  hasEduExpenses: null,
+  eduTiming: null, // within_1y | 1_3y | 3_5y | gt_5y | unsure
+  eduAmount: null, // number
+  contributed529: null,
+
+  // Emergency fund & big goals
+  emergencyMonths: null, // <1 | 1_3 | 3_6 | gt_6
+  bigNearTermExpense: null, // yes/no
+
+  // Savings goals (kept minimal)
+  hasSavingsGoal: null,
+  savingsGoals: [],
+  savingsGoalOther: "",
+};
+
+// Utility formatters
+const num = (v)=> (v===null||v===undefined||v==="")?null:Number(v);
+const pct = (v)=> v!==null && v!=="" ? Number(v) : null;
+const highestDebtRate = ()=> state.debts.length? Math.max(...state.debts.map(d=>Number(d.rate)||0)) : null;
 
 // ------------------------------
 // Steps Definition (one at a time UI)
@@ -524,6 +528,9 @@ const steps = [
   },
 ];
 
+// ------------------------------
+// Rendering + Navigation
+// ------------------------------
 let stepIndex = 0;
 const stepsHost = document.getElementById('steps');
 const recHost = document.getElementById('recommendations');
@@ -545,11 +552,17 @@ function debtEntryTemplate(name='', rate='', idx=0){
 }
 
 function render(){
+  // find the next visible step index if current is hidden
   while(steps[stepIndex] && steps[stepIndex].show && !steps[stepIndex].show()){ stepIndex++; }
-  if(stepIndex>=steps.length){ showRecommendations(); return; }
+
+  if(stepIndex>=steps.length){
+    showRecommendations();
+    return;
+  }
 
   const s = steps[stepIndex];
   stepsHost.innerHTML = s.render();
+  // add nav buttons except for single-button special screens
   addNav(stepsHost, {back: stepIndex>0, next:false});
   s.bind(stepsHost, nextStep);
 }
@@ -557,14 +570,6 @@ function render(){
 function addNav(root, {back=false, next=false}={}){
   const nav = document.createElement('div');
   nav.className = 'nav';
-
-  // Home button
-  const homeLink = document.createElement('a');
-  homeLink.href = '/';
-  homeLink.textContent = 'Home';
-  homeLink.className = 'home-btn';
-  nav.appendChild(homeLink);
-
   if(back){
     const b = document.createElement('button');
     b.type='button'; b.textContent='Back';
@@ -584,15 +589,94 @@ function addNav(root, {back=false, next=false}={}){
 
 function nextStep(){ stepIndex++; render(); }
 function prevStep(){
+  // move back to a prior visible step
   do { stepIndex = Math.max(0, stepIndex-1); }
   while(steps[stepIndex] && steps[stepIndex].show && !steps[stepIndex].show() && stepIndex>0);
   render();
 }
 
 function showRecommendations(){
+  const rec = [];
+
+  // Step 1 — Minimum debt payments
+  if(state.hasDebt==='yes' && state.makingMinPayments==='no'){
+    rec.push('Make at least the minimum payment on every debt immediately.');
+  }
+
+  // Step 2/3 — HSA then FSA
+  if(state.hasHDHP==='yes' && state.hasHSA==='yes' && state.hsaMaxed==='no'){
+    rec.push('Max your HSA for the year (triple tax-advantaged and payroll contributions avoid FICA).');
+  }
+  if(state.fsaEligible==='yes'){
+    if(state.fsaExpectedSpend!=null && state.fsaExpectedSpend>0 && state.fsaContribEnough==='no'){
+      rec.push(`Contribute about $${Number(state.fsaExpectedSpend).toLocaleString()} to your FSA (up to the plan/IRS limit). Avoid overfunding since carryover is limited.`);
+    }
+  }
+
+  // Step 4A — High-interest debt vs match ordering
+  if(state.hasEmployerPlan==='yes' && state.hasMatch==='yes' && state.matchPercent!=null){
+    const hi = highestDebtRate();
+    if(hi!=null){
+      if(hi > state.matchPercent){
+        rec.push('Pay down debts with APR higher than your employer match percentage. Then contribute enough to get the full employer match.');
+      } else {
+        rec.push('Contribute enough to get your full employer match (free money).');
+      }
+    } else {
+      rec.push('Contribute enough to get your full employer match (free money).');
+    }
+  } else if(state.hasEmployerPlan==='yes' && state.hasMatch==='no'){
+    // Employer plan but no match
+    rec.push('Contribute to your employer plan as budget allows (no match available).');
+  }
+
+  // Step 5 — Traditional IRA if no employer plan
+  if(state.hasEmployerPlan==='no'){
+    if(state.iraEligible==='yes'){
+      if(state.iraMaxed==='no') rec.push('Increase Traditional IRA contributions up to the annual maximum you are eligible to deduct.');
+    } else {
+      rec.push('Consider IRA contributions if eligible; deductibility depends on income and coverage by a workplace plan.');
+    }
+  }
+
+  // Step 6 — Education (first check within 1 year)
+  if(state.hasEduExpenses==='yes' && state.eduTiming==='within_1y'){
+    if(state.eduAmount) rec.push(`If your state offers benefits, contribute to a 529 plan—target up to $${Number(state.eduAmount).toLocaleString()} (or the annual limit, whichever is less).`);
+    else rec.push('If expenses are within a year, consider contributing to a 529 plan up to the annual limit or expected need.');
+  }
+
+  // Step 7 — Emergency Fund gate
+  if(state.emergencyMonths==='lt1'){
+    rec.push('Build an emergency fund up to at least 1 month of expenses before moving on.');
+  } else if(state.emergencyMonths==='1_3'){
+    rec.push('Build your emergency fund to at least 3 months of expenses before moving on.');
+  }
+
+  // Step 8 — Big near-term expenses (after >=3 months EF)
+  if(state.emergencyMonths==='3_6' || state.emergencyMonths==='gt6'){
+    if(state.bigNearTermExpense==='yes'){
+      rec.push('Save for your big near‑term goal before proceeding (keep those funds safe and liquid).');
+    }
+  }
+
+  // Step 9 — Education revisit
+  if(state.hasEduExpenses==='yes' && (state.emergencyMonths==='3_6' || state.emergencyMonths==='gt6')){
+    if(state.eduAmount) rec.push(`Contribute to a 529 plan up to the lesser of the annual limit or $${Number(state.eduAmount).toLocaleString()}.`);
+    else rec.push('Contribute to a 529 plan up to the lesser of the annual limit or your expected need.');
+  }
+
+  // Step 10 — Max employer plan fully
+  if(state.hasEmployerPlan==='yes'){
+    rec.push('After the above, increase contributions to maximize your employer‑sponsored retirement plan for the year.');
+  }
+
+  // Final fallback if nothing accumulated
+  if(rec.length===0){
+    rec.push('Nice work—your inputs don’t trigger any urgent actions. Continue funding long‑term goals and consider increasing retirement contributions.');
+  }
+
   recHost.style.display='block';
-  recHost.innerHTML = `<h3>Your Next Steps</h3><ol>${/* your recs logic */''}</ol>
-  <div style="margin-top:20px;"><a href="/" class="home-btn">Home</a></div>`;
+  recHost.innerHTML = `<h3>Your Next Steps</h3><ol>${rec.map(r=>`<li>${r}</li>`).join('')}</ol>`;
 }
 
 // Boot
